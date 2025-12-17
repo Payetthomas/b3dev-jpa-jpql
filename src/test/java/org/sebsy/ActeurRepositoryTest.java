@@ -11,6 +11,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,145 +19,156 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ActeurRepositoryTest {
 
-	private static EntityManagerFactory emf;
-	private EntityManager em;
+    private static EntityManagerFactory emf;
+    private EntityManager em;
 
-	/**
-	 * Extraire tous les acteurs triés dans l'ordre alphabétique des identités
-	 */
-	@Test
-	public void testExtraireActeursTriesParIdentite() {
+    /**
+     * Extraire tous les acteurs triés dans l'ordre alphabétique des identités
+     */
+    @Test
+    public void testExtraireActeursTriesParIdentite() {
 
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a order by a.identite", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
+        TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a order by a.identite", Acteur.class);
+        List<Acteur> acteurs = query.getResultList();
 
-		assertEquals(1137, acteurs.size());
-		assertEquals("A.J. Danna", acteurs.get(0).getIdentite());
-	}
+        assertEquals(1137, acteurs.size());
+        assertEquals("A.J. Danna", acteurs.get(0).getIdentite());
+    }
 
-	/**
-	 * Extraire l'actrice appelée Marion Cotillard
-	 */
-	@Test
-	public void testExtraireActeursParIdentite() {
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a where a.identite = 'Marion Cotillard'", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
+    /**
+     * Extraire l'actrice appelée Marion Cotillard
+     */
+    @Test
+    public void testExtraireActeursParIdentite() {
+        TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a where a.identite = 'Marion Cotillard'", Acteur.class);
+        List<Acteur> acteurs = query.getResultList();
 
-		assertEquals(1, acteurs.size());
-		assertEquals("Marion Cotillard", acteurs.get(0).getIdentite());
-	}
+        assertEquals(1, acteurs.size());
+        assertEquals("Marion Cotillard", acteurs.get(0).getIdentite());
+    }
 
-	/**
-	 * Extraire la liste des acteurs dont l'année de naissance est 1985. Astuce:
-	 * fonction year(...)
-	 */
-	@Test
-	public void testExtraireActeursParAnneeNaissance() {
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
+    /**
+     * Extraire la liste des acteurs dont l'année de naissance est 1985. Astuce:
+     * fonction year(...)
+     */
+    //ICI
+    @Test
+    public void testExtraireActeursParAnneeNaissance() {
+        TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a WHERE YEAR(a.anniversaire) = :annee", Acteur.class);
+        query.setParameter("annee", 1985);
+        List<Acteur> acteurs = query.getResultList();
 
-		assertEquals(10, acteurs.size());
-	}
+        assertEquals(10, acteurs.size());
+    }
 
-	/**
-	 * Extraire la liste des actrices ayant joué le rôle d'Harley Quinn
-	 */
-	@Test
-	public void testExtraireActeursParRole() {
+    /**
+     * Extraire la liste des actrices ayant joué le rôle d'Harley Quinn
+     */
+    @Test
+    public void testExtraireActeursParRole() {
 
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
+        TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a JOIN a.roles r WHERE r.nom = :role", Acteur.class);
+        query.setParameter("role", "Harley Quinn");
+        List<Acteur> acteurs = query.getResultList();
 
-		assertEquals(1, acteurs.size());
-		assertEquals("Margot Robbie", acteurs.get(0).getIdentite());
-	}
+        assertEquals(1, acteurs.size());
+        assertEquals("Margot Robbie", acteurs.get(0).getIdentite());
+    }
 
-	/**
-	 * Extraire la liste de tous les acteurs ayant joué dans un film paru en 2015.
-	 */
-	@Test
-	public void testExtraireActeursParFilmParuAnnee() {
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
-		assertEquals(119, acteurs.size());
-	}
+    /**
+     * Extraire la liste de tous les acteurs ayant joué dans un film paru en 2015.
+     */
+    @Test
+    public void testExtraireActeursParFilmParuAnnee() {
+        TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a JOIN a.roles r WHERE r.film.annee = :annee ", Acteur.class);
+        query.setParameter("annee", 2015);
+        List<Acteur> acteurs = query.getResultList();
+        assertEquals(119, acteurs.size());
+    }
 
-	/**
-	 * Extraire la liste de tous les acteurs ayant joué dans un film dont le pays d'origine est France
-	 */
-	@Test
-	public void testExtraireActeursParPays() {
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
-		assertEquals(158, acteurs.size());
-	}
+    /**
+     * Extraire la liste de tous les acteurs ayant joué dans un film dont le pays d'origine est France
+     */
+    @Test
+    public void testExtraireActeursParPays() {
+        TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a JOIN a.roles r JOIN r.film.pays f WHERE f.nom = :pays", Acteur.class);
+        query.setParameter("pays", "France");
+        List<Acteur> acteurs = query.getResultList();
+        assertEquals(158, acteurs.size());
+    }
 
-	/**
-	 * Extraire la liste de tous les acteurs ayant joué dans un film paru en 2017 et dont le pays d'origine
-	 * est France
-	 */
-	@Test
-	public void testExtraireActeursParListePaysEtAnnee() {
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
-		assertEquals(24, acteurs.size());
-	}
+    /**
+     * Extraire la liste de tous les acteurs ayant joué dans un film paru en 2017 et dont le pays d'origine
+     * est France
+     */
+    @Test
+    public void testExtraireActeursParListePaysEtAnnee() {
+        TypedQuery<Acteur> query = em.createQuery("SELECT DISTINCT a FROM Acteur a JOIN a.roles r JOIN r.film f  JOIN r.film.pays p WHERE f.annee = :annee AND p.nom = :pays", Acteur.class);
+        query.setParameter("annee", 2017);
+        query.setParameter("pays", "France");
+        List<Acteur> acteurs = query.getResultList();
+        assertEquals(24, acteurs.size());
+    }
 
-	/**
-	 * Extraire la liste de tous les acteurs ayant joué dans un film réalisé par
-	 * Ridley Scott entre les années 2010 et 2020
-	 */
-	@Test
-	public void testExtraireParRealisateurEntreAnnee() {
-		TypedQuery<Acteur> query = em.createQuery("SELECT a FROM Acteur a", Acteur.class);
-		List<Acteur> acteurs = query.getResultList();
-		assertEquals(27, acteurs.size());
-	}
-	
-	/**
-	 * Extraire la liste de tous les réalisateurs ayant réalisé un film dans lequel Brad Pitt a joué
-	 */
-	@Test
-	public void testExtraireRealisateursParActeur() {
-		TypedQuery<Realisateur> query = em.createQuery("SELECT r FROM Realisateur r", Realisateur.class);
-		List<Realisateur> acteurs = query.getResultList();
-		assertEquals(6, acteurs.size());
-	}
-	
-	@BeforeEach
-	public void ouvertureEm() {
-		em = emf.createEntityManager();
-	}
-	
-	@AfterEach
-	public void fermetureEm() {
-		em.close();
-	}
+    /**
+     * Extraire la liste de tous les acteurs ayant joué dans un film réalisé par
+     * Ridley Scott entre les années 2010 et 2020
+     */
+    @Test
+    public void testExtraireParRealisateurEntreAnnee() {
+        TypedQuery<Acteur> query = em.createQuery("SELECT DISTINCT a FROM Acteur a JOIN a.roles r JOIN r.film f JOIN f.realisateurs re WHERE re.identite = :real AND f.annee BETWEEN  :annee1 AND :annee2 ", Acteur.class);
+        query.setParameter("real", "Ridley Scott");
+        query.setParameter("annee1", 2010);
+        query.setParameter("annee2", 2020);
+        List<Acteur> acteurs = query.getResultList();
+        assertEquals(27, acteurs.size());
+    }
 
-	@BeforeAll
-	public static void initDatabase() {
-		emf = Persistence.createEntityManagerFactory("movie_db");
-		EntityManager em = emf.createEntityManager();
-		
-		try {
-			
-			if (em.createQuery("FROM Acteur").getResultList().size()==0) {
-				em.getTransaction().begin();
-				Path home = Paths.get(ActeurRepositoryTest.class.getClassLoader().getResource("data.sql").toURI());
-				String[] queries = Files.readAllLines(home).stream().collect(Collectors.joining("\n")).split(";");
-				for (String query: queries) {
-					em.createNativeQuery(query).executeUpdate();
-				}
-				em.getTransaction().commit();
-			}
-		} catch (IOException | URISyntaxException e) {
-			throw new RuntimeException(e);
-		}
-		em.close();
-	}
+    /**
+     * Extraire la liste de tous les réalisateurs ayant réalisé un film dans lequel Brad Pitt a joué
+     */
+    @Test
+    public void testExtraireRealisateursParActeur() {
+        TypedQuery<Realisateur> query = em.createQuery("SELECT DISTINCT r FROM Realisateur r JOIN  r.films f JOIN f.roles ro JOIN ro.acteur a WHERE a.identite = :nom", Realisateur.class);
+        query.setParameter("nom", "Brad Pitt");
+        List<Realisateur> acteurs = query.getResultList();
+        assertEquals(6, acteurs.size());
+    }
 
-	@AfterAll
-	public static void fermetureRessources() {
-		emf.close();
-	}
+    @BeforeEach
+    public void ouvertureEm() {
+        em = emf.createEntityManager();
+    }
+
+    @AfterEach
+    public void fermetureEm() {
+        em.close();
+    }
+
+    @BeforeAll
+    public static void initDatabase() {
+        emf = Persistence.createEntityManagerFactory("movie_db");
+        EntityManager em = emf.createEntityManager();
+
+        try {
+
+            if (em.createQuery("FROM Acteur").getResultList().size()==0) {
+                em.getTransaction().begin();
+                Path home = Paths.get(ActeurRepositoryTest.class.getClassLoader().getResource("data.sql").toURI());
+                String[] queries = Files.readAllLines(home).stream().collect(Collectors.joining("\n")).split(";");
+                for (String query: queries) {
+                    em.createNativeQuery(query).executeUpdate();
+                }
+                em.getTransaction().commit();
+            }
+        } catch (IOException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        em.close();
+    }
+
+    @AfterAll
+    public static void fermetureRessources() {
+        emf.close();
+    }
 }
